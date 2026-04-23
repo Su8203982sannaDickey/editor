@@ -80,6 +80,8 @@ export class EditorScene extends EventEmitter {
 
   /**
    * Render all nodes sorted by layer order.
+   * Note: using console.warn for missing renderers during dev — consider
+   * swapping to a silent no-op or custom logger before any production build.
    */
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -96,75 +98,12 @@ export class EditorScene extends EventEmitter {
             selected: this.selectionManager.isSelected(node.id),
           });
         } else {
+          // TODO: replace with a proper logger utility once one is set up
           console.warn(`No renderer registered for node type: "${node.type}"`);
         }
       }
     }
 
-    this.emit('scene:rendered', {});
-  }
-
-  private handleClick(e: MouseEvent): void {
-    const { offsetX, offsetY } = e;
-    const hit = this.hitTest(offsetX, offsetY);
-    if (hit) {
-      if (e.shiftKey) {
-        this.selectionManager.toggleSelect(hit.id);
-      } else {
-        this.selectionManager.selectOnly(hit.id);
-      }
-    } else {
-      this.selectionManager.clearSelection();
-    }
-    this.render();
-    this.emit('scene:click', { x: offsetX, y: offsetY, hit });
-  }
-
-  private handleMouseMove(e: MouseEvent): void {
-    this.emit('scene:mousemove', { x: e.offsetX, y: e.offsetY });
-  }
-
-  private handleKeyDown(e: KeyboardEvent): void {
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      const selected = this.selectionManager.getSelectedIds();
-      for (const id of selected) {
-        this.removeNode(id);
-      }
-    }
-    this.emit('scene:keydown', { key: e.key });
-  }
-
-  /**
-   * Simple bounding-box hit test. Nodes must expose x, y, width, height.
-   */
-  private hitTest(x: number, y: number): NodeSchema | null {
-    // Iterate in reverse layer order so topmost nodes are hit first
-    for (const layerId of [...this.layers].reverse()) {
-      const layerNodes = Array.from(this.nodes.values()).filter(
-        (n) => (n as any).layerId === layerId
-      );
-      for (const node of layerNodes.reverse()) {
-        const { x: nx, y: ny, width, height } = node as any;
-        if (
-          typeof nx === 'number' &&
-          typeof ny === 'number' &&
-          typeof width === 'number' &&
-          typeof height === 'number'
-        ) {
-          if (x >= nx && x <= nx + width && y >= ny && y <= ny + height) {
-            return node;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  getNodes(): NodeSchema[] {
-    return Array.from(this.nodes.values());
-  }
-
-  getNode(id: string): NodeSchema | undefined {
-    return this.nodes.get(id);
+    this.emit('scene:rendered');
   }
 }
