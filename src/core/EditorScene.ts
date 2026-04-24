@@ -82,6 +82,8 @@ export class EditorScene extends EventEmitter {
    * Render all nodes sorted by layer order.
    * Note: missing renderers are silently skipped — the console.warn was too
    * noisy during development when experimenting with unregistered node types.
+   * TODO: might want to add a debug flag later to re-enable those warnings
+   * when tracking down missing renderer registrations.
    */
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -95,11 +97,4 @@ export class EditorScene extends EventEmitter {
         const renderer = this.registry.getRenderer(node.type);
         if (renderer) {
           renderer.render(this.ctx, node, {
-            selected: this.selectionManager.isSelected(node.id),
-          });
-        }
-        // silently skip nodes with no registered renderer
-      }
-    }
-  }
-}
+            selected: this.selectionManager.isSelect
