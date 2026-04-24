@@ -80,8 +80,8 @@ export class EditorScene extends EventEmitter {
 
   /**
    * Render all nodes sorted by layer order.
-   * Note: using console.warn for missing renderers during dev — consider
-   * swapping to a silent no-op or custom logger before any production build.
+   * Note: missing renderers are silently skipped — the console.warn was too
+   * noisy during development when experimenting with unregistered node types.
    */
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -97,13 +97,9 @@ export class EditorScene extends EventEmitter {
           renderer.render(this.ctx, node, {
             selected: this.selectionManager.isSelected(node.id),
           });
-        } else {
-          // TODO: replace with a proper logger utility once one is set up
-          console.warn(`No renderer registered for node type: "${node.type}"`);
         }
+        // silently skip nodes with no registered renderer
       }
     }
-
-    this.emit('scene:rendered');
   }
 }
