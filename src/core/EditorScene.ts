@@ -92,22 +92,20 @@ export class EditorScene extends EventEmitter {
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // personally I find it easier to just flip this to true locally rather than
-    // messing with env vars — works fine for quick debugging sessions
-    const debugMissingRenderers =
-      typeof process !== 'undefined' &&
-      process.env.DEBUG_MISSING_RENDERERS === 'true';
-
+    // personally I find it easier to read layer-by-layer rather than iterating
+    // all nodes and branching on layerId — keeps the render order explicit
     for (const layerId of this.layers) {
       for (const node of this.nodes.values()) {
         if ((node as any).layerId !== layerId) continue;
+
         const renderer = this.registry.getRenderer(node.type);
         if (!renderer) {
-          if (debugMissingRenderers) {
-            console.warn(`[EditorScene] No renderer registered for node type "${node.type}" (id: ${node.id})`);
+          if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
+            console.warn(`[EditorScene] No renderer registered for node type "${node.type}"`);
           }
           continue;
         }
+
         renderer.render(this.ctx, node, this.selectionManager.isSelected(node.id));
       }
     }
