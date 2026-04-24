@@ -84,9 +84,17 @@ export class EditorScene extends EventEmitter {
    * noisy during development when experimenting with unregistered node types.
    * TODO: might want to add a debug flag later to re-enable those warnings
    * when tracking down missing renderer registrations.
+   *
+   * Personal note: I added a console.warn here anyway behind a flag so I can
+   * toggle it on locally without touching the main skip logic. Set
+   * DEBUG_MISSING_RENDERERS=true in the environment to enable.
    */
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const debugMissingRenderers =
+      typeof process !== 'undefined' &&
+      process.env?.DEBUG_MISSING_RENDERERS === 'true';
 
     for (const layerId of this.layers) {
       const layerNodes = Array.from(this.nodes.values()).filter(
@@ -94,7 +102,4 @@ export class EditorScene extends EventEmitter {
       );
 
       for (const node of layerNodes) {
-        const renderer = this.registry.getRenderer(node.type);
-        if (renderer) {
-          renderer.render(this.ctx, node, {
-            selected: this.selectionManager.isSelect
+        const renderer = this.registry.getRenderer(
