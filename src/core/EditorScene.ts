@@ -92,22 +92,21 @@ export class EditorScene extends EventEmitter {
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // personally I find it easier to read layer-by-layer rather than iterating
-    // all nodes and branching on layerId — keeps the render order explicit
-    for (const layerId of this.layers) {
-      for (const node of this.nodes.values()) {
-        if ((node as any).layerId !== layerId) continue;
+    // personally I find it easier to reason about layer ordering when we
+    // build an explicit ordered list rather than filtering nodes per layer
+    const orderedNodes = this.layers.flatMap((layerId) =>
+      [...this.nodes.values()].filter((n) => (n as any).layerId === layerId)
+    );
 
-        const renderer = this.registry.getRenderer(node.type);
-        if (!renderer) {
-          if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
-            console.warn(`[EditorScene] No renderer registered for node type "${node.type}"`);
-          }
-          continue;
+    for (const node of orderedNodes) {
+      const renderer = this.registry.getRenderer(node.type);
+      if (!renderer) {
+        if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
+          console.warn(`[EditorScene] No renderer registered for node type "${node.type}"`);
         }
-
-        renderer.render(this.ctx, node, this.selectionManager.isSelected(node.id));
+        continue;
       }
+      renderer.render(this.ctx, node, this.selectionManager.isSelected(node.id));
     }
   }
 }
