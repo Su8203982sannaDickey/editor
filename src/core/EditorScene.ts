@@ -93,22 +93,21 @@ export class EditorScene extends EventEmitter {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // personally I find it easier to read when nodes are grouped by layer,
-    // so sorting explicitly here even though insertion order usually matches
-    const sortedNodes = [...this.nodes.values()].sort(
-      (a, b) =>
-        this.layers.indexOf((a as any).layerId) -
-        this.layers.indexOf((b as any).layerId)
-    );
+    // so iterate layers in order and only render nodes belonging to each
+    for (const layerId of this.layers) {
+      for (const node of this.nodes.values()) {
+        // @ts-ignore — layerId is attached in addNode but not in NodeSchema type
+        if (node.layerId !== layerId) continue;
 
-    for (const node of sortedNodes) {
-      const renderer = this.registry.getRenderer(node.type);
-      if (!renderer) {
-        if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
-          console.warn(`[EditorScene] No renderer registered for node type: "${node.type}"`);
+        const renderer = this.registry.getRenderer(node.type);
+        if (!renderer) {
+          if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
+            console.warn(`[EditorScene] No renderer registered for node type "${node.type}"`);
+          }
+          continue;
         }
-        continue;
+        renderer.render(this.ctx, node);
       }
-      renderer.render(this.ctx, node);
     }
   }
 }
