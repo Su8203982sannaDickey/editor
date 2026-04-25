@@ -92,21 +92,23 @@ export class EditorScene extends EventEmitter {
   render(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // personally I find it easier to reason about layer ordering when we
-    // build an explicit ordered list rather than filtering nodes per layer
-    const orderedNodes = this.layers.flatMap((layerId) =>
-      [...this.nodes.values()].filter((n) => (n as any).layerId === layerId)
+    // personally I find it easier to read when nodes are grouped by layer,
+    // so sorting explicitly here even though insertion order usually matches
+    const sortedNodes = [...this.nodes.values()].sort(
+      (a, b) =>
+        this.layers.indexOf((a as any).layerId) -
+        this.layers.indexOf((b as any).layerId)
     );
 
-    for (const node of orderedNodes) {
+    for (const node of sortedNodes) {
       const renderer = this.registry.getRenderer(node.type);
       if (!renderer) {
         if (process.env.DEBUG_MISSING_RENDERERS === 'true') {
-          console.warn(`[EditorScene] No renderer registered for node type "${node.type}"`);
+          console.warn(`[EditorScene] No renderer registered for node type: "${node.type}"`);
         }
         continue;
       }
-      renderer.render(this.ctx, node, this.selectionManager.isSelected(node.id));
+      renderer.render(this.ctx, node);
     }
   }
 }
